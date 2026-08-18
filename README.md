@@ -110,16 +110,3 @@ HTTP 200 OK
 
 The game server handles the HP calculation and game state internally.
 
-
-Initial Page:
-<img width="1600" height="652" alt="image" src="https://github.com/user-attachments/assets/0d577931-d4dd-44ca-a70d-d9af1a723f85" />
-
-When correct answer is given and when Shikkari Shambhu is above 500 hp:
-<img width="1600" height="617" alt="image" src="https://github.com/user-attachments/assets/1a6a74c2-ad47-4b06-bb7e-ad718dfae102" />
-
-When correct answer is given and when Shikkari Shambhu is below 500 hp:
-<img width="1600" height="647" alt="image" src="https://github.com/user-attachments/assets/729bc5dc-fb50-4fc2-bce3-96939631c291" />
-
-When health becomes 0:
-<img width="1600" height="656" alt="image" src="https://github.com/user-attachments/assets/17f4b46c-9dcc-43df-9254-cd2bb63d1898" />
-

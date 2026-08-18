@@ -11,7 +11,7 @@ import time
 
 app = FastAPI(title="Villain HP Game")
 
-STATIC_DIR = Path(__file__).parent / "static"
+STATIC_DIR = Path(__file__).parent.parent / "static"
 
 MAX_HP = 1000
 DAMAGE_PER_HIT = 20

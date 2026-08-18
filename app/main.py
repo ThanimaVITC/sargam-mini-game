@@ -94,9 +94,6 @@ def apply_hit(amount: int = DAMAGE_PER_HIT):
 
 class LeaderboardEvent(BaseModel):
     correct: bool
-    user: str | None = None
-    question_id: str | None = None
-    meta: dict | None = None
 
 
 # ===========================================================================
@@ -112,12 +109,7 @@ async def leaderboard_event(evt: LeaderboardEvent):
     if evt.correct:
         apply_hit(DAMAGE_PER_HIT)
         triggered = True
-    return {
-        "received": evt.model_dump(),
-        "damage_applied": triggered,
-        "hp": state["hp"],
-        "alive": state["alive"],
-    }
+    return Response(status_code=200)
 
 
 @app.get("/state")

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regen Control</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --canopy-dark: #0d1a12;
+    --canopy-mid: #16281a;
+    --moss: #3a5a3f;
+    --ember: #e8622c;
+    --ember-dim: #a8461f;
+    --hp-high: #7fb844;
+    --hp-mid: #e8b23c;
+    --hp-low: #e8622c;
+    --hp-crit: #c62828;
+    --bone: #f2ead6;
+    --ink: #0a120c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: linear-gradient(180deg, var(--canopy-dark) 0%, var(--canopy-mid) 100%);
+    color: var(--bone);
+    font-family: 'Space Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .display { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.04em; }
+
+  .panel {
+    width: 92%;
+    max-width: 440px;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 32px 28px;
+    text-align: center;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--moss);
+    text-decoration: none;
+  }
+  .back-link:hover { color: var(--bone); }
+
+  h1 {
+    font-size: 2.2rem;
+    margin: 0 0 6px;
+    color: var(--bone);
+    text-shadow: 0 0 18px rgba(232,98,44,0.35);
+  }
+  .sub {
+    font-size: 0.72rem;
+    color: var(--moss);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 26px;
+  }
+
+  .hp-number {
+    font-size: 2.6rem;
+    font-family: 'Bebas Neue', sans-serif;
+    margin-bottom: 4px;
+    transition: color 0.3s;
+  }
+  .hp-sub { font-size: 0.68rem; color: var(--moss); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }
+
+  .hp-bar-outer {
+    height: 18px;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid var(--ink);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .hp-bar-inner {
+    height: 100%;
+    width: 100%;
+    transition: width 0.45s ease, background 0.45s;
+  }
+
+  .cycle-line {
+    font-size: 0.7rem;
+    color: var(--bone);
+    opacity: 0.7;
+    margin-bottom: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  #regenBtn {
+    width: 100%;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: transparent;
+    border: 2px solid var(--ember-dim);
+    color: var(--bone);
+    padding: 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #regenBtn:hover { border-color: var(--ember); background: rgba(232,98,44,0.1); }
+  #regenBtn.active {
+    background: var(--ember);
+    border-color: var(--ember);
+    color: var(--ink);
+    box-shadow: 0 0 18px rgba(232,98,44,0.5);
+  }
+  #regenBtn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .status-line {
+    margin-top: 16px;
+    font-size: 0.7rem;
+    color: var(--moss);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    line-height: 1.6;
+  }
+  .status-line.queued { color: var(--hp-mid); }
+
+  .explainer {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    font-size: 0.68rem;
+    color: rgba(242,234,214,0.55);
+    line-height: 1.7;
+    text-align: left;
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+  <a class="back-link" href="/">&larr; back to arena</a>
+  <h1 class="display">REGEN CONTROL</h1>
+  <div class="sub">decide Shikkari Shambhu's fate for this cycle</div>
+
+  <div class="hp-number" id="hpNumber">1000</div>
+  <div class="hp-sub">current HP</div>
+  <div class="hp-bar-outer"><div class="hp-bar-inner" id="hpBarInner"></div></div>
+
+  <div class="cycle-line">Cycle <span id="cycleNum">1</span></div>
+
+  <button id="regenBtn">Queue Regen</button>
+  <div class="status-line" id="statusLine">not queued this cycle</div>
+
+  <div class="explainer">
+    Queuing regen doesn't act immediately — it arms a rescue for the <em>current</em> cycle.
+    If Shikkari Shambhu's HP drains down to ~100 while regen is queued, he'll be restored to
+    500 HP and a new cycle begins. If HP reaches 0 with nothing queued, the fight ends.
+    The queue resets at the start of every new cycle, so you'll need to decide again.
+  </div>
+</div>
+
+<script>
+const el = {
+  hpNumber: document.getElementById('hpNumber'),
+  hpBarInner: document.getElementById('hpBarInner'),
+  cycleNum: document.getElementById('cycleNum'),
+  regenBtn: document.getElementById('regenBtn'),
+  statusLine: document.getElementById('statusLine'),
+};
+
+let regenQueuedLocal = false;
+
+function getCSS(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+function hpColor(hp) {
+  if (hp <= 100) return getCSS('--hp-crit');
+  if (hp <= 300) return getCSS('--hp-low');
+  if (hp <= 600) return getCSS('--hp-mid');
+  return getCSS('--hp-high');
+}
+
+function updateUI(state) {
+  el.hpNumber.textContent = state.hp;
+  const color = hpColor(state.hp);
+  el.hpNumber.style.color = color;
+  el.hpBarInner.style.width = (state.hp / state.max_hp * 100) + '%';
+  el.hpBarInner.style.background = color;
+  el.cycleNum.textContent = state.cycle;
+
+  regenQueuedLocal = state.regen_queued;
+  el.regenBtn.classList.toggle('active', state.regen_queued);
+  el.regenBtn.disabled = !state.alive || state.friends;
+  el.statusLine.textContent = state.friends
+    ? 'the fight is over — no regen possible'
+    : (state.regen_queued
+        ? 'queued — will trigger at ~100 HP this cycle'
+        : 'not queued this cycle');
+  el.statusLine.classList.toggle('queued', state.regen_queued);
+}
+
+async function poll() {
+  try {
+    const res = await fetch('/state');
+    const state = await res.json();
+    updateUI(state);
+  } catch (e) {
+    el.statusLine.textContent = 'connection lost — retrying...';
+  }
+}
+
+el.regenBtn.addEventListener('click', async () => {
+  const newVal = !regenQueuedLocal;
+  await fetch('/regen', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ regenerate: newVal })
+  });
+  poll();
+});
+
+poll();
+setInterval(poll, 1000);
+</script>
+
+</body>
+</html>

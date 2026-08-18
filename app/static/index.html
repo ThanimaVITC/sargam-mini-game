@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shikkari Shambhu</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap');
+
+  :root {
+    --canopy-dark: #0d1a12;
+    --canopy-mid: #16281a;
+    --moss: #3a5a3f;
+    --ember: #e8622c;
+    --ember-dim: #a8461f;
+    --hp-high: #7fb844;
+    --hp-mid: #e8b23c;
+    --hp-low: #e8622c;
+    --hp-crit: #c62828;
+    --bone: #f2ead6;
+    --ink: #0a120c;
+    --friend-gold: #e8b23c;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--canopy-dark);
+    color: var(--bone);
+    font-family: 'Space Mono', monospace;
+    overflow: hidden;
+  }
+
+  .display {
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.04em;
+  }
+
+  #stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background:
+      radial-gradient(ellipse 900px 500px at 50% -5%, rgba(122,168,96,0.22), transparent 65%),
+      radial-gradient(ellipse 700px 900px at 8% 60%, rgba(58,90,63,0.28), transparent 60%),
+      radial-gradient(ellipse 700px 900px at 92% 60%, rgba(58,90,63,0.28), transparent 60%),
+      linear-gradient(180deg, var(--canopy-dark) 0%, var(--canopy-mid) 50%, #0a1a10 85%, #060f0a 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* soft diagonal light shafts filtering through canopy */
+  .light-shafts {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      linear-gradient(115deg, transparent 22%, rgba(232,178,60,0.05) 24%, transparent 27%),
+      linear-gradient(115deg, transparent 46%, rgba(232,178,60,0.045) 48.5%, transparent 52%),
+      linear-gradient(115deg, transparent 68%, rgba(232,178,60,0.04) 70%, transparent 74%);
+    mix-blend-mode: screen;
+  }
+
+  /* distant back tree-line, dim and desaturated for depth */
+  .tree-layer-back {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 260px;
+    z-index: 1;
+    opacity: 0.4;
+    pointer-events: none;
+    background: var(--canopy-mid);
+    clip-path: polygon(
+      0 0,100% 0,100% 38%,
+      95% 55%,90% 30%,84% 60%,79% 25%,74% 58%,68% 32%,
+      63% 62%,57% 28%,52% 55%,47% 30%,42% 60%,36% 25%,
+      31% 58%,26% 30%,21% 55%,16% 28%,11% 60%,6% 32%,0 50%
+    );
+  }
+
+  /* mid tree-line, closer and more saturated */
+  .canopy-fringe {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 170px;
+    background:
+      repeating-linear-gradient(100deg, var(--moss) 0 22px, transparent 22px 44px),
+      repeating-linear-gradient(80deg, var(--canopy-mid) 0 30px, transparent 30px 60px);
+    clip-path: polygon(
+      0 0,100% 0,100% 45%,
+      93% 70%,87% 40%,81% 75%,74% 35%,68% 72%,
+      61% 38%,55% 78%,48% 32%,42% 70%,35% 40%,
+      29% 75%,22% 35%,16% 68%,9% 38%,3% 72%,0 45%
+    );
+    opacity: 0.6;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* ground-level forest trees framing the sides of the arena */
+  .ground-tree {
+    position: absolute;
+    bottom: 16%;
+    width: 90px;
+    height: 230px;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .ground-tree .trunk {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 16px;
+    height: 70px;
+    background: linear-gradient(180deg, #4a3520, #2c1e11);
+    border-radius: 3px;
+  }
+  .ground-tree .canopy-shape {
+    position: absolute;
+    bottom: 55px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 130px;
+    background: radial-gradient(ellipse at 35% 30%, var(--moss) 0%, var(--canopy-mid) 70%);
+    clip-path: polygon(
+      50% 0%, 68% 8%, 80% 22%, 92% 20%, 98% 38%,
+      90% 48%, 100% 62%, 86% 72%, 90% 88%, 72% 90%,
+      64% 100%, 50% 92%, 36% 100%, 28% 90%, 10% 88%,
+      14% 72%, 0% 62%, 10% 48%, 2% 38%, 8% 20%, 20% 22%, 32% 8%
+    );
+    filter: drop-shadow(0 10px 10px rgba(0,0,0,0.4));
+  }
+  .ground-tree.small { width: 64px; height: 160px; opacity: 0.65; }
+  .ground-tree.small .trunk { height: 46px; width: 11px; }
+  .ground-tree.small .canopy-shape { width: 68px; height: 90px; bottom: 38px; }
+
+  /* hanging vine accents at the edges */
+  .vine {
+    position: absolute;
+    top: 0;
+    width: 3px;
+    background: linear-gradient(180deg, var(--moss), transparent 90%);
+    opacity: 0.5;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: 2px;
+  }
+  .vine::before, .vine::after {
+    content: '';
+    position: absolute;
+    width: 10px;
+    height: 14px;
+    background: var(--moss);
+    border-radius: 0 60% 0 60%;
+    opacity: 0.85;
+  }
+  .vine::before { top: 40%; left: -3px; transform: rotate(-15deg); }
+  .vine::after { top: 68%; left: 2px; transform: rotate(20deg) scaleX(-1); }
+
+  /* soft drifting particles (pollen/dust) */
+  .particle {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(232,178,60,0.5), transparent 70%);
+    z-index: 2;
+    pointer-events: none;
+    animation: drift 14s ease-in-out infinite;
+  }
+  @keyframes drift {
+    0%   { transform: translate(0,0); opacity: 0; }
+    10%  { opacity: 0.7; }
+    50%  { transform: translate(30px,-140px); opacity: 0.5; }
+    90%  { opacity: 0.2; }
+    100% { transform: translate(-10px,-260px); opacity: 0; }
+  }
+
+  .ground {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 27%;
+    background:
+      radial-gradient(ellipse 200px 40px at 20% 15%, rgba(122,168,96,0.15), transparent 70%),
+      radial-gradient(ellipse 260px 40px at 75% 25%, rgba(122,168,96,0.12), transparent 70%),
+      linear-gradient(180deg, #1c2e1c, #0a140a);
+    border-top: 2px solid rgba(122,168,96,0.25);
+    z-index: 1;
+  }
+
+  /* worn dirt path running across the ground where the character walks */
+  .dirt-path {
+    position: absolute;
+    left: -5%;
+    right: -5%;
+    top: 38%;
+    height: 46%;
+    background: linear-gradient(180deg, #6b4a2e 0%, #55391f 55%, #402a15 100%);
+    opacity: 0.75;
+    transform: skewY(-1.2deg);
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.3) inset, 0 2px 6px rgba(0,0,0,0.3) inset;
+    z-index: 1;
+  }
+  .dirt-path::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 40px 10px at 12% 30%, rgba(0,0,0,0.18), transparent 70%),
+      radial-gradient(ellipse 55px 12px at 34% 65%, rgba(0,0,0,0.15), transparent 70%),
+      radial-gradient(ellipse 45px 10px at 58% 25%, rgba(0,0,0,0.16), transparent 70%),
+      radial-gradient(ellipse 50px 11px at 79% 60%, rgba(0,0,0,0.15), transparent 70%),
+      radial-gradient(ellipse 40px 9px at 93% 35%, rgba(0,0,0,0.15), transparent 70%);
+  }
+
+  /* small grass tufts along the ground line */
+  .grass-tuft {
+    position: absolute;
+    bottom: 100%;
+    width: 14px;
+    height: 20px;
+    background: var(--moss);
+    opacity: 0.55;
+    clip-path: polygon(50% 0%, 20% 100%, 0% 100%, 35% 30%, 15% 100%, 50% 40%, 85% 100%, 65% 30%, 100% 100%, 80% 100%);
+    pointer-events: none;
+  }
+
+  #hud {
+    position: relative;
+    z-index: 5;
+    padding: 22px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .logo-img {
+    height: 52px;
+    display: block;
+    filter: drop-shadow(0 0 14px rgba(232,98,44,0.25));
+  }
+  .title-block .sub {
+    font-size: 0.68rem;
+    color: var(--moss);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 4px;
+  }
+  .title-block .sub a { color: inherit; }
+
+  #hpPanel {
+    min-width: 300px;
+    flex: 1 1 320px;
+    max-width: 460px;
+  }
+
+  .hp-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .hp-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 0.08em;
+    color: var(--bone);
+  }
+  .hp-number {
+    font-size: 0.85rem;
+    color: var(--hp-high);
+    font-weight: 700;
+    transition: color 0.3s;
+  }
+
+  .hp-bar-outer {
+    height: 22px;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid var(--ink);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.6);
+  }
+  .hp-bar-inner {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--hp-high), #9fce5c);
+    transition: width 0.45s cubic-bezier(.4,0,.2,1), background 0.45s;
+    position: relative;
+  }
+  .hp-bar-inner::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(115deg, rgba(255,255,255,0.12) 0 6px, transparent 6px 14px);
+  }
+  .hp-tick-100 {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: rgba(0,0,0,0.35);
+  }
+
+  #arena {
+    position: relative;
+    flex: 1;
+    z-index: 2;
+  }
+  #arena.hidden-for-friends > * {
+    visibility: hidden;
+  }
+
+  .sargam-badge {
+    position: absolute;
+    top: 12%;
+    left: 50%;
+    transform: translateX(-50%) rotate(-2deg);
+    z-index: 4;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.06em;
+    font-size: 1.9rem;
+    color: #fff4dd;
+    background: linear-gradient(135deg, #e8622c 0%, #c94a1a 55%, #a8461f 100%);
+    padding: 10px 26px;
+    border-radius: 10px;
+    border: 2px solid rgba(255,220,170,0.5);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+    text-shadow: 0 2px 3px rgba(0,0,0,0.4);
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .sargam-badge span {
+    color: #ffe9a8;
+    margin-left: 4px;
+  }
+
+  .sprite-wrap {
+    position: absolute;
+    bottom: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  #villain {
+    width: 150px;
+    height: 200px;
+    position: relative;
+    filter: drop-shadow(0 12px 14px rgba(0,0,0,0.55));
+    animation: patrol 4.5s ease-in-out infinite;
+  }
+  @keyframes patrol {
+    0%, 48% { transform: translateX(-38px); }
+    50%, 98% { transform: translateX(38px); }
+    100% { transform: translateX(-38px); }
+  }
+  #villain.frozen { animation-play-state: paused; }
+
+  .villain-body {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .villain-body.mirror { transform: scaleX(-1); }
+  .villain-body.tier-below500 {
+    width: 128%;
+    height: 128%;
+    transform: translate(-14%, -14%);
+  }
+  .villain-body.tier-below500.mirror { transform: translate(-14%, -14%) scaleX(-1); }
+
+  .villain-label {
+    margin-top: 10px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.1em;
+    font-size: 0.85rem;
+    color: rgba(242,234,214,0.6);
+  }
+
+  #villain.hit-flash .villain-body { animation: flashRed 0.35s ease; }
+  @keyframes flashRed {
+    0% { filter: brightness(1); }
+    30% { filter: brightness(1.8) saturate(0.4) drop-shadow(0 0 18px #ff4444); }
+    100% { filter: brightness(1); }
+  }
+
+  #villain.falling .villain-body { animation: fallGetUp 1.1s ease; }
+  @keyframes fallGetUp {
+    0% { transform: rotate(0deg) translateY(0); }
+    30% { transform: rotate(12deg) translateY(10px); }
+    55% { transform: rotate(12deg) translateY(10px); }
+    100% { transform: rotate(0deg) translateY(0); }
+  }
+
+  #villain.regenerating .villain-body { animation: regenGlow 1.3s ease; }
+  @keyframes regenGlow {
+    0% { filter: brightness(1); }
+    50% { filter: brightness(1.6) drop-shadow(0 0 26px var(--hp-high)); }
+    100% { filter: brightness(1); }
+  }
+
+  .tiger-side {
+    position: absolute;
+    top: 40%;
+    width: 220px;
+    height: 143px;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .tiger-side.left {
+    left: -230px;
+    transform: rotate(90deg);
+    transform-origin: center center;
+    transition: left 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .tiger-side.right {
+    right: -230px;
+    transform: rotate(-90deg) scaleX(-1);
+    transform-origin: center center;
+    transition: right 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .tiger-side.left.peek { left: -53px; }
+  .tiger-side.right.peek { right: -53px; }
+
+  .tiger-body { width: 100%; height: 100%; object-fit: contain; display: block; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.5)); }
+
+  .stone {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #8a8a8a, #3a3a3a 70%);
+    z-index: 4;
+    box-shadow: 0 0 6px rgba(0,0,0,0.5);
+  }
+
+  #feed {
+    display: none;
+  }
+
+  .dmg-float {
+    position: absolute;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.4rem;
+    color: var(--ember);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    z-index: 7;
+    animation: floatUp 1s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes floatUp {
+    0% { transform: translateY(0); opacity: 1; }
+    100% { transform: translateY(-60px); opacity: 0; }
+  }
+
+  #friendsBanner {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: radial-gradient(ellipse at center, rgba(232,178,60,0.18), rgba(10,18,12,0.92));
+    text-align: center;
+    gap: 10px;
+  }
+  #friendsBanner.show { display: flex; }
+  #friendsImg {
+    max-width: min(340px, 60vw);
+    max-height: 40vh;
+    object-fit: contain;
+    filter: drop-shadow(0 14px 22px rgba(0,0,0,0.5));
+    margin-bottom: 4px;
+  }
+  #friendsBanner h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.2rem;
+    color: var(--friend-gold);
+    margin: 0;
+    letter-spacing: 0.06em;
+    text-shadow: 0 0 30px rgba(232,178,60,0.6);
+  }
+  #friendsBanner p {
+    color: var(--bone);
+    font-size: 0.85rem;
+    max-width: 420px;
+    line-height: 1.6;
+    opacity: 0.85;
+  }
+  #friendsBanner button {
+    margin-top: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    background: var(--friend-gold);
+    border: none;
+    color: var(--ink);
+    padding: 10px 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  #credit {
+    position: absolute;
+    bottom: 10px;
+    right: 14px;
+    font-size: 0.6rem;
+    color: rgb(242, 234, 214);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  #devPanel {
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    z-index: 8;
+    display: flex;
+    gap: 8px;
+    opacity: 0.55;
+  }
+  #devPanel button {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: var(--bone);
+    padding: 5px 9px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  #devPanel button:hover { background: rgba(255,255,255,0.12); }
+
+  @media (max-width: 600px) {
+    #hud { padding: 16px 16px 0; }
+    .logo-img { height: 38px; }
+    #hpPanel { min-width: 0; }
+    #devPanel { position: static; margin: 10px 16px 0; opacity: 0.7; }
+    .sargam-badge { font-size: 1.2rem; padding: 7px 16px; top: 9%; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div class="tree-layer-back"></div>
+  <div class="light-shafts"></div>
+  <div class="canopy-fringe"></div>
+
+  <div class="vine" style="left:6%; height:150px;"></div>
+  <div class="vine" style="left:94%; height:120px;"></div>
+  <div class="vine" style="left:48%; height:90px;"></div>
+
+  <div class="particle" style="left:15%; width:5px; height:5px; animation-delay:0s;"></div>
+  <div class="particle" style="left:35%; width:3px; height:3px; animation-delay:4s;"></div>
+  <div class="particle" style="left:60%; width:4px; height:4px; animation-delay:8s;"></div>
+  <div class="particle" style="left:78%; width:3px; height:3px; animation-delay:2s;"></div>
+  <div class="particle" style="left:88%; width:5px; height:5px; animation-delay:6s;"></div>
+
+  <div class="ground-tree small" style="left:1%;">
+    <div class="canopy-shape"></div>
+    <div class="trunk"></div>
+  </div>
+  <div class="ground-tree" style="left:-3%;">
+    <div class="canopy-shape"></div>
+    <div class="trunk"></div>
+  </div>
+  <div class="ground-tree small" style="right:2%;">
+    <div class="canopy-shape"></div>
+    <div class="trunk"></div>
+  </div>
+  <div class="ground-tree" style="right:-3%;">
+    <div class="canopy-shape"></div>
+    <div class="trunk"></div>
+  </div>
+
+  <div id="hud">
+    <div class="title-block">
+      <img src="/static/images/logo.png" alt="logo" class="logo-img">
+    </div>
+
+    <div id="hpPanel">
+      <div class="hp-label-row">
+        <span class="hp-name display">SHIKKARI SHAMBHU HP</span>
+        <span class="hp-number" id="hpNumber">1000 / 1000</span>
+      </div>
+      <div class="hp-bar-outer">
+        <div class="hp-bar-inner" id="hpBarInner" style="width:100%">
+          <div class="hp-tick-100" style="left:50%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="arena">
+    <div class="tiger-side left" id="tigerLeft">
+      <img class="tiger-body" id="tigerLeftImg" src="/static/images/tiger.png" alt="tiger">
+    </div>
+
+    <div class="tiger-side right" id="tigerRight">
+      <img class="tiger-body" id="tigerRightImg" src="/static/images/tiger.png" alt="tiger">
+    </div>
+
+    <div class="sargam-badge">SARGAM <span>26</span></div>
+
+    <div class="sprite-wrap">
+      <div id="villain">
+        <img class="villain-body" id="villainImg" src="/static/images/villain_normal_idle.png" alt="villain">
+      </div>
+    </div>
+  </div>
+
+  <div id="feed"></div>
+
+  <div id="friendsBanner">
+    <img src="/static/images/villain_tiger_friends.png" alt="villain and tiger become friends" id="friendsImg">
+    <button id="restartBtn">Play Again</button>
+    <div id="credit">made with ❤️ by dani &amp; mayookh</div>
+  </div>
+
+  <div class="ground">
+    <div class="dirt-path"></div>
+    <div class="grass-tuft" style="left:4%;"></div>
+    <div class="grass-tuft" style="left:11%; height:16px;"></div>
+    <div class="grass-tuft" style="left:22%; height:24px;"></div>
+    <div class="grass-tuft" style="left:31%;"></div>
+    <div class="grass-tuft" style="left:68%; height:18px;"></div>
+    <div class="grass-tuft" style="left:77%;"></div>
+    <div class="grass-tuft" style="left:87%; height:22px;"></div>
+    <div class="grass-tuft" style="left:95%; height:15px;"></div>
+  </div>
+
+  <!--
+    DEV/TEST ONLY — delete this whole #devPanel block once the leaderboard
+    is wired to POST /webhook/leaderboard-event directly. "Reset" is the
+    only button worth keeping around if you want a manual reset control.
+  -->
+  <div id="devPanel">
+    <button id="devCorrect">+ Correct Answer</button>
+    <button id="devWrong">+ Wrong Answer</button>
+    <button id="devReset">Reset</button>
+  </div>
+</div>
+
+<script>
+const API = '';
+let lastSeenEventId = 0;
+
+const SPRITES = {
+  above500_idle: '/static/images/villain_normal_idle.png',
+  above500_hit:  '/static/images/villain_hit_above500.png',
+  above500_fall: '/static/images/villain_fall_above500.png',
+  above500_walk_left: '/static/images/villain_walk_left.png',
+  above500_walk_right: '/static/images/villain_walk_right.png',
+  below500_idle: '/static/images/villain_bandaged_idle.png',
+  below500_hit:  '/static/images/villain_hit_below500.png',
+  below500_fall: '/static/images/villain_fall_below500.png',
+  regen_eating: '/static/images/villain_regen_eating.png',
+  friends: '/static/images/villain_tiger_friends.png',
+};
+
+const TIGER_NORMAL_SRC = '/static/images/tiger.png';
+const TIGER_THROW_SRC = '/static/images/tiger_throw.png';
+
+const el = {
+  hpNumber: document.getElementById('hpNumber'),
+  hpBarInner: document.getElementById('hpBarInner'),
+  villain: document.getElementById('villain'),
+  villainImg: document.getElementById('villainImg'),
+  tigerLeft: document.getElementById('tigerLeft'),
+  tigerRight: document.getElementById('tigerRight'),
+  tigerLeftImg: document.getElementById('tigerLeftImg'),
+  tigerRightImg: document.getElementById('tigerRightImg'),
+  feed: document.getElementById('feed'),
+  friendsBanner: document.getElementById('friendsBanner'),
+  arena: document.getElementById('arena'),
+};
+
+let currentTier = 'above500'; // 'above500' | 'below500'
+let revertTimer = null;
+
+// keep in sync with the CSS `patrol` keyframes (0-48% left, 50-98% right) —
+// if you change those percentages, update PATROL_DURATION_MS/0.49 to match.
+const PATROL_DURATION_MS = 4500;
+const patrolStartTime = performance.now();
+let lastFacing = null;
+
+function currentFacing() {
+  const elapsed = (performance.now() - patrolStartTime) % PATROL_DURATION_MS;
+  return (elapsed / PATROL_DURATION_MS) < 0.49 ? 'left' : 'right';
+}
+
+function applyMirror(shouldMirror) {
+  el.villainImg.classList.toggle('mirror', shouldMirror);
+  el.villainImg.classList.toggle('tier-below500', currentTier === 'below500');
+}
+
+function getCSS(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+function hpColor(hp) {
+  if (hp <= 100) return getCSS('--hp-crit');
+  if (hp <= 300) return getCSS('--hp-low');
+  if (hp <= 600) return getCSS('--hp-mid');
+  return getCSS('--hp-high');
+}
+function setFeed(msg) { el.feed.textContent = msg; }
+
+function setIdleSprite(facing) {
+  facing = facing || currentFacing();
+  if (facing === 'left') {
+    if (currentTier === 'above500') {
+      el.villainImg.src = SPRITES.above500_walk_left;
+      applyMirror(false);
+    } else {
+      // no dedicated bandaged walk-left art — reuse bandaged idle, mirrored
+      el.villainImg.src = SPRITES.below500_idle;
+      applyMirror(true);
+    }
+  } else {
+    if (currentTier === 'above500') {
+      el.villainImg.src = SPRITES.above500_walk_right;
+      applyMirror(false);
+    } else {
+      el.villainImg.src = SPRITES.below500_idle;
+      applyMirror(false);
+    }
+  }
+}
+
+function updateHUD(state) {
+  el.hpNumber.textContent = `${state.hp} / ${state.max_hp}`;
+  const pct = (state.hp / state.max_hp) * 100;
+  el.hpBarInner.style.width = pct + '%';
+  const color = hpColor(state.hp);
+  el.hpBarInner.style.background = `linear-gradient(90deg, ${color}, ${color})`;
+  el.hpNumber.style.color = color;
+
+  currentTier = state.sprite_tier === 'bandaged' ? 'below500' : 'above500';
+  if (!revertTimer) setIdleSprite();
+
+  if (state.friends) {
+    el.friendsBanner.classList.add('show');
+    el.villain.classList.add('frozen');
+    el.arena.classList.add('hidden-for-friends');
+  }
+}
+
+function spawnDamageFloat(amount) {
+  const float = document.createElement('div');
+  float.className = 'dmg-float';
+  float.textContent = '-' + amount;
+  const wrap = document.querySelector('.sprite-wrap');
+  const rect = wrap.getBoundingClientRect();
+  float.style.left = (rect.left + rect.width/2 + (Math.random()*40-20)) + 'px';
+  float.style.top = (rect.top + 40) + 'px';
+  document.body.appendChild(float);
+  setTimeout(() => float.remove(), 1000);
+}
+
+function throwStone(fromSide, onImpact) {
+  const tigerEl = fromSide === 'left' ? el.tigerLeft : el.tigerRight;
+  const tigerImg = fromSide === 'left' ? el.tigerLeftImg : el.tigerRightImg;
+  tigerEl.classList.add('peek');
+
+  setTimeout(() => {
+    // swap to the throwing-pose image right as the stone releases
+    tigerImg.src = TIGER_THROW_SRC;
+
+    const tigerRect = tigerEl.getBoundingClientRect();
+    const villainRect = el.villain.getBoundingClientRect();
+    const stone = document.createElement('div');
+    stone.className = 'stone';
+    const startX = fromSide === 'left' ? tigerRect.right - 30 : tigerRect.left + 30;
+    const startY = tigerRect.top + tigerRect.height * 0.4;
+    stone.style.left = startX + 'px';
+    stone.style.top = startY + 'px';
+    document.body.appendChild(stone);
+
+    const endX = villainRect.left + villainRect.width/2;
+    const endY = villainRect.top + villainRect.height*0.4;
+
+    stone.animate([
+      { transform: 'translate(0,0) rotate(0deg)', offset: 0 },
+      { transform: `translate(${(endX-startX)*0.5}px, ${(endY-startY)*0.5 - 60}px) rotate(180deg)`, offset: 0.5 },
+      { transform: `translate(${endX-startX}px, ${endY-startY}px) rotate(360deg)`, offset: 1 },
+    ], { duration: 480, easing: 'ease-in' }).onfinish = () => {
+      stone.remove();
+      // revert to the normal tiger pose once the stone has left/landed
+      tigerImg.src = TIGER_NORMAL_SRC;
+      // everything tied to the impact (damage number, flash/fall/regen)
+      // happens here, right as the stone lands — not when the event arrived.
+      onImpact();
+    };
+  }, 260);
+
+  setTimeout(() => tigerEl.classList.remove('peek'), 1400);
+}
+
+function triggerHitSprite() {
+  clearTimeout(revertTimer);
+  applyMirror(false);
+  el.villainImg.src = currentTier === 'above500' ? SPRITES.above500_hit : SPRITES.below500_hit;
+  el.villain.classList.remove('hit-flash');
+  void el.villain.offsetWidth;
+  el.villain.classList.add('hit-flash');
+  setTimeout(() => el.villain.classList.remove('hit-flash'), 400);
+  revertTimer = setTimeout(() => { setIdleSprite(); revertTimer = null; }, 650);
+}
+
+function triggerFall() {
+  clearTimeout(revertTimer);
+  applyMirror(false);
+  el.villainImg.src = currentTier === 'above500' ? SPRITES.above500_fall : SPRITES.below500_fall;
+  el.villain.classList.remove('falling');
+  void el.villain.offsetWidth;
+  el.villain.classList.add('falling');
+  setTimeout(() => el.villain.classList.remove('falling'), 1150);
+  revertTimer = setTimeout(() => { setIdleSprite(); revertTimer = null; }, 1200);
+}
+
+function triggerRegen() {
+  clearTimeout(revertTimer);
+  applyMirror(false);
+  el.villainImg.src = SPRITES.regen_eating;
+  el.villain.classList.remove('regenerating');
+  void el.villain.offsetWidth;
+  el.villain.classList.add('regenerating');
+  setTimeout(() => el.villain.classList.remove('regenerating'), 1600);
+  revertTimer = setTimeout(() => { setIdleSprite(); revertTimer = null; }, 1800);
+}
+
+// a single hit can produce multiple backend events (hit -> fall_get_up,
+// or hit -> fall_get_up -> friends). We walk state.history instead of just
+// last_event so none of these get dropped, and animate each hit + its
+// outcome as one beat (stone flies, then flash/fall/regen/friends on impact).
+let animQueue = [];
+let animating = false;
+
+function pickOutcome(trailing) {
+  return trailing.find(e => e.kind === 'friends')
+      || trailing.find(e => e.kind === 'regen')
+      || trailing.find(e => e.kind === 'fall_get_up')
+      || null;
+}
+
+function queueEvents(events) {
+  let i = 0;
+  while (i < events.length) {
+    const evt = events[i];
+    if (evt.kind === 'hit') {
+      const trailing = [];
+      let j = i + 1;
+      while (j < events.length && ['fall_get_up', 'regen', 'friends'].includes(events[j].kind)) {
+        trailing.push(events[j]);
+        j++;
+      }
+      animQueue.push({ hit: evt, trailing });
+      i = j;
+    } else {
+      animQueue.push({ hit: null, trailing: [evt] });
+      i++;
+    }
+  }
+  runQueue();
+}
+
+function runQueue() {
+  if (animating || animQueue.length === 0) return;
+  animating = true;
+  const beat = animQueue.shift();
+  playBeat(beat, () => {
+    animating = false;
+    runQueue();
+  });
+}
+
+function describeHitOutcome(outcome, hit) {
+  switch (outcome && outcome.kind) {
+    case 'fall_get_up': return 'The stone connects — Shikkari Shambhu is knocked down... and gets back up.';
+    case 'regen': return 'The stone connects — Rambo backs off and Shikkari Shambhu recovers to 500 HP. New cycle begins.';
+    case 'friends': return 'The stone connects — the fight is over.';
+    default: return `Direct hit! Shikkari Shambhu takes ${hit.damage ?? 20} damage.`;
+  }
+}
+
+function playBeat({ hit, trailing }, done) {
+  if (!hit) {
+    resolveStandaloneOutcome(trailing[0], done);
+    return;
+  }
+
+  const outcome = pickOutcome(trailing);
+  const side = Math.random() < 0.5 ? 'left' : 'right';
+  setFeed(describeHitOutcome(outcome, hit));
+
+  throwStone(side, () => {
+    // damage number + outcome animation only fire once the stone actually lands
+    spawnDamageFloat(hit.damage ?? 20);
+    switch (outcome && outcome.kind) {
+      case 'fall_get_up':
+        triggerFall();
+        setTimeout(done, 1150);
+        break;
+      case 'regen':
+        triggerRegen();
+        setTimeout(done, 1350);
+        break;
+      case 'friends':
+        // finishing blow — the "unlikely friends" banner is already
+        // shown by updateHUD; just give the impact a beat to land.
+        setTimeout(done, 500);
+        break;
+      default:
+        triggerHitSprite();
+        setTimeout(done, 650);
+    }
+  });
+}
+
+function resolveStandaloneOutcome(evt, done) {
+  if (!evt) { done(); return; }
+  switch (evt.kind) {
+    case 'fall_get_up':
+      triggerFall();
+      setFeed('Shikkari Shambhu stumbles... and gets back up.');
+      setTimeout(done, 1150);
+      return;
+    case 'regen':
+      triggerRegen();
+      setFeed('Rambo backs off — Shikkari Shambhu recovers to 500 HP. New cycle begins.');
+      setTimeout(done, 1350);
+      return;
+    case 'friends':
+      setFeed('The fight is over.');
+      done();
+      return;
+    case 'no_damage_wrong_answer':
+      setFeed('Wrong answer — no damage.');
+      done();
+      return;
+    default:
+      // regen_queued / regen_unqueued from the regen control page — no
+      // in-arena animation needed, the HUD's regen-status line covers it.
+      done();
+  }
+}
+
+async function poll() {
+  try {
+    const res = await fetch(API + '/state');
+    const state = await res.json();
+    updateHUD(state);
+
+    const newEvents = (state.history || [])
+      .filter(e => e.id > lastSeenEventId)
+      .sort((a, b) => a.id - b.id);
+
+    if (newEvents.length) {
+      lastSeenEventId = newEvents[newEvents.length - 1].id;
+      queueEvents(newEvents);
+    }
+  } catch (e) {
+    setFeed('Connection lost — retrying...');
+  }
+}
+
+// DEV/TEST ONLY — remove these two listeners along with the #devPanel
+// buttons in the HTML above once the real leaderboard is connected.
+document.getElementById('devCorrect').addEventListener('click', async () => {
+  await fetch(API + '/admin/simulate-correct', { method: 'POST' });
+  poll();
+});
+document.getElementById('devWrong').addEventListener('click', async () => {
+  await fetch(API + '/admin/simulate-wrong', { method: 'POST' });
+  poll();
+});
+function resetAnimState() {
+  el.friendsBanner.classList.remove('show');
+  el.villain.classList.remove('frozen');
+  el.arena.classList.remove('hidden-for-friends');
+  lastSeenEventId = 0;
+  animQueue = [];
+  animating = false;
+  lastFacing = null;
+  clearTimeout(revertTimer);
+  revertTimer = null;
+  setIdleSprite();
+}
+
+document.getElementById('devReset').addEventListener('click', async () => {
+  await fetch(API + '/admin/reset', { method: 'POST' });
+  resetAnimState();
+  poll();
+});
+document.getElementById('restartBtn').addEventListener('click', async () => {
+  await fetch(API + '/admin/reset', { method: 'POST' });
+  resetAnimState();
+  poll();
+});
+
+// keep the displayed sprite in sync with which way the villain is currently
+// facing (per the patrol keyframe timing), but never step on a hit/fall/regen
+// animation that's mid-flight (revertTimer set = one-shot animation active).
+setInterval(() => {
+  if (revertTimer) return;
+  const f = currentFacing();
+  if (f !== lastFacing) {
+    lastFacing = f;
+    setIdleSprite(f);
+  }
+}, 150);
+
+poll();
+setInterval(poll, 1000);
+</script>
+
+</body>
+</html>

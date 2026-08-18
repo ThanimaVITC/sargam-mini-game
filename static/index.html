@@ -662,6 +662,7 @@
 <script>
 const API = '';
 let lastSeenEventId = 0;
+let initialStateLoaded = false;
 
 const SPRITES = {
   above500_idle: '/static/images/villain_normal_idle.png',
@@ -968,6 +969,18 @@ async function poll() {
     const res = await fetch(API + '/state');
     const state = await res.json();
     updateHUD(state);
+
+    // On a fresh page load, the backend history contains old events that
+    // have already been animated. Start watching from the latest event
+    // instead of replaying the entire history after a refresh.
+    if (!initialStateLoaded) {
+      const history = state.history || [];
+      lastSeenEventId = history.length
+        ? Math.max(...history.map(e => e.id))
+        : (state.event_id || 0);
+      initialStateLoaded = true;
+      return;
+    }
 
     const newEvents = (state.history || [])
       .filter(e => e.id > lastSeenEventId)

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from pathlib import Path
 import time
 
-app = FastAPI(title="Villain HP Game")
+app = FastAPI(title="Sargam Game")
 
 STATIC_DIR = Path(__file__).parent.parent / "static"
 

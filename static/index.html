@@ -749,7 +749,7 @@ function setIdleSprite(facing) {
   el.villainImg.dataset.state = 'idle';
   if (facing === 'left') {
     if (currentTier === 'above500') {
-      el.villainImg.src = SPRITES.above500_walk_left;
+      el.villainImg.src = SPRITES.above500_walk_right;
       applyMirror(false);
     } else {
       // no dedicated bandaged walk-left art — reuse bandaged idle, mirrored
@@ -758,7 +758,7 @@ function setIdleSprite(facing) {
     }
   } else {
     if (currentTier === 'above500') {
-      el.villainImg.src = SPRITES.above500_walk_right;
+      el.villainImg.src = SPRITES.above500_walk_left;
       applyMirror(false);
     } else {
       el.villainImg.src = SPRITES.below500_idle;

@@ -373,12 +373,32 @@
     display: block;
   }
   .villain-body.mirror { transform: scaleX(-1); }
+  /* the bandaged (below-500 HP) art files are cropped very differently from
+     each other — idle has generous padding, hit/fall/regen are cropped tight
+     — so each sprite needs its own compensating scale to render at roughly
+     the same on-screen size as its above-500 counterpart. Tune the % below
+     against the corresponding above-500 sprite if the art changes. */
   .villain-body.tier-below500 {
-    width: 128%;
-    height: 128%;
-    transform: translate(-14%, -14%);
+    width: 122%;
+    height: 122%;
+    transform: translate(-11%, -11%);
   }
-  .villain-body.tier-below500.mirror { transform: translate(-14%, -14%) scaleX(-1); }
+  .villain-body.tier-below500.mirror { transform: translate(-11%, -11%) scaleX(-1); }
+  .villain-body.tier-below500[data-state="hit"] {
+    width: 87%;
+    height: 87%;
+    transform: translate(6.5%, 6.5%);
+  }
+  .villain-body.tier-below500[data-state="fall"] {
+    width: 80%;
+    height: 80%;
+    transform: translate(10%, 10%);
+  }
+  .villain-body.tier-below500[data-state="regen"] {
+    width: 100%;
+    height: 100%;
+    transform: translate(0, 0);
+  }
 
   .villain-label {
     margin-top: 10px;
@@ -726,6 +746,7 @@ function setFeed(msg) { el.feed.textContent = msg; }
 
 function setIdleSprite(facing) {
   facing = facing || currentFacing();
+  el.villainImg.dataset.state = 'idle';
   if (facing === 'left') {
     if (currentTier === 'above500') {
       el.villainImg.src = SPRITES.above500_walk_left;
@@ -818,6 +839,7 @@ function throwStone(fromSide, onImpact) {
 function triggerHitSprite() {
   clearTimeout(revertTimer);
   applyMirror(false);
+  el.villainImg.dataset.state = 'hit';
   el.villainImg.src = currentTier === 'above500' ? SPRITES.above500_hit : SPRITES.below500_hit;
   el.villain.classList.remove('hit-flash');
   void el.villain.offsetWidth;
@@ -829,6 +851,7 @@ function triggerHitSprite() {
 function triggerFall() {
   clearTimeout(revertTimer);
   applyMirror(false);
+  el.villainImg.dataset.state = 'fall';
   el.villainImg.src = currentTier === 'above500' ? SPRITES.above500_fall : SPRITES.below500_fall;
   el.villain.classList.remove('falling');
   void el.villain.offsetWidth;
@@ -840,6 +863,7 @@ function triggerFall() {
 function triggerRegen() {
   clearTimeout(revertTimer);
   applyMirror(false);
+  el.villainImg.dataset.state = 'regen';
   el.villainImg.src = SPRITES.regen_eating;
   el.villain.classList.remove('regenerating');
   void el.villain.offsetWidth;
